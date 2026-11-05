@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raunaq (رونق) — Wedding Moments</title>
+  <style>
+    :root {
+      --primary: #881337;
+      --primary-hover: #700f2d;
+      --bg: #faf7f5;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #15803d;
+      --error: #b91c1c;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      padding: 24px 20px;
+      position: relative;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .lang-toggle {
+      background: none;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .event-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .event-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .window-notice {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--error);
+      padding: 14px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    .btn-upload {
+      display: block;
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-upload:active { background: var(--primary-hover); }
+    .queue-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .file-item {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .file-name {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+    .file-status {
+      font-weight: 700;
+    }
+    .status-queued { color: var(--text-muted); }
+    .status-uploading { color: var(--primary); }
+    .status-confirming { color: #d97706; }
+    .status-done { color: var(--success); }
+    .status-failed { color: var(--error); }
+    .progress-bar-bg {
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+    .btn-retry {
+      align-self: flex-end;
+      margin-top: 6px;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: var(--error);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .thank-you-box {
+      text-align: center;
+      padding: 24px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+      margin-top: 20px;
+    }
+    .thank-you-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" id="app">
+    <div class="header">
+      <div class="brand">Raunaq • رونق</div>
+      <button class="lang-toggle" id="langBtn" onclick="toggleLanguage()">اردو</button>
+    </div>
+
+    <div id="loadingView">Loading wedding moments...</div>
+
+    <div id="errorView" style="display:none;" class="window-notice"></div>
+
+    <div id="closedView" style="display:none;" class="window-notice">
+      <div id="closedNoticeText"></div>
+    </div>
+
+    <div id="mainView" style="display:none;">
+      <h1 class="event-title" id="eventTitle">Wedding Album</h1>
+      <p class="event-subtitle" id="eventSubtitle">Upload your photos & videos to celebrate with the couple.</p>
+
+      <div class="form-group" id="funcPickerGroup" style="display:none;">
+        <label id="funcLabel">Event Function</label>
+        <select id="funcSelect"></select>
+      </div>
+
+      <div class="form-group">
+        <label id="nameLabel">Your Name (Optional)</label>
+        <input type="text" id="guestNameInput" placeholder="e.g. Uncle Rashid">
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+      <button class="btn-upload" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+        📸 Add Photos & Videos
+      </button>
+
+      <div id="queueContainer" style="display:none;">
+        <div class="queue-title" id="queueTitle">Upload Progress</div>
+        <div id="fileList"></div>
+      </div>
+
+      <div class="thank-you-box" id="thankYouBox" style="display:none;">
+        <div class="thank-you-title" id="thankYouTitle">Thank you!</div>
+        <div id="thankYouText">Your photos are with the host.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STRINGS = {
+      en: {
+        brand: "Raunaq • رونق",
+        langBtn: "اردو",
+        loading: "Loading wedding moments...",
+        eventSubtitle: "Upload your photos & videos to celebrate with the couple.",
+        funcLabel: "Event Function",
+        nameLabel: "Your Name (Optional)",
+        namePlaceholder: "e.g. Uncle Rashid",
+        uploadBtn: "📸 Add Photos & Videos",
+        queueTitle: "Upload Progress",
+        statusQueued: "Queued",
+        statusUploading: "Uploading...",
+        statusConfirming: "Confirming...",
+        statusDone: "✓ Uploaded",
+        statusFailed: "Failed",
+        retryBtn: "Retry",
+        reselectBtn: "Re-select file",
+        thankYouTitle: "Thank you!",
+        thankYouText: "Your photos and videos are safely with the host.",
+        windowClosed: "The upload window for this event is closed.",
+        eventNotFound: "Event not found. Please check or re-scan your table QR code.",
+      },
+      ur: {
+        brand: "رونق • Raunaq",
+        langBtn: "English",
+        loading: "شادی کی یادیں لوڈ ہو رہی ہیں...",
+        eventSubtitle: "دولہا دلہن کے ساتھ یادگار لمحات شیئر کرنے کے لیے تصاویر اور ویڈیوز شامل کریں۔",
+        funcLabel: "تقریب",
+        nameLabel: "آپ کا نام (اختیاری)",
+        namePlaceholder: "مثلاً: راشد انکل",
+        uploadBtn: "📸 تصاویر اور ویڈیوز شامل کریں",
+        queueTitle: "اپلوڈ کی تفصیل",
+        statusQueued: "قطار میں ہے",
+        statusUploading: "اپلوڈ جاری ہے...",
+        statusConfirming: "تصدیق ہو رہی ہے...",
+        statusDone: "✓ محفوظ ہو گئی",
+        statusFailed: "ناکامی",
+        retryBtn: "دوبارہ کوشش کریں",
+        reselectBtn: "فائل دوبارہ منتخب کریں",
+        thankYouTitle: "بہت شکریہ!",
+        thankYouText: "آپ کی تصاویر بحفاظت میزبان تک پہنچ چکی ہیں۔",
+        windowClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
+        eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
+      }
+    };
+
+    let currentLang = localStorage.getItem("raunaq_lang") || "en";
+    let eventData = null;
+    let fileQueue = []; // { id, file, name, size, mime, kind, state, progress, storageKey }
+    let guestToken = "";
+
+    // Resolve token from path /g/<token> or query ?token=
+    function getToken() {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const gIndex = parts.indexOf("g");
+      if (gIndex !== -1 && parts[gIndex + 1]) {
+        return parts[gIndex + 1];
+      }
+      const params = new URLSearchParams(window.location.search);
+      return params.get("token") || parts[parts.length - 1] || "";
+    }
+
+    guestToken = getToken();
+
+    // Always route API calls to Supabase Cloud Edge Functions
+    const API_BASE = "https://qsglzqpecupjemibjoem.supabase.co/functions/v1";
+
+    function applyStrings() {
+      const s = STRINGS[currentLang];
+      document.documentElement.setAttribute("dir", currentLang === "ur" ? "rtl" : "ltr");
+      document.getElementById("langBtn").innerText = s.langBtn;
+      document.getElementById("loadingView").innerText = s.loading;
+      document.getElementById("eventSubtitle").innerText = s.eventSubtitle;
+      document.getElementById("funcLabel").innerText = s.funcLabel;
+      document.getElementById("nameLabel").innerText = s.nameLabel;
+      document.getElementById("guestNameInput").placeholder = s.namePlaceholder;
+      document.getElementById("uploadBtn").innerText = s.uploadBtn;
+      document.getElementById("queueTitle").innerText = s.queueTitle;
+      document.getElementById("thankYouTitle").innerText = s.thankYouTitle;
+      renderQueue();
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === "en" ? "ur" : "en";
+      localStorage.setItem("raunaq_lang", currentLang);
+      applyStrings();
+    }
+
+    async function init() {
+      applyStrings();
+      if (!guestToken) {
+        showError(STRINGS[currentLang].eventNotFound);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/event-info`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: guestToken })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || STRINGS[currentLang].eventNotFound);
+          return;
+        }
+
+        eventData = data;
+        document.getElementById("eventTitle").innerText = data.title;
+        document.getElementById("loadingView").style.display = "none";
+
+        // Check upload window
+        const now = new Date();
+        const open = new Date(data.uploadOpenAt);
+        const close = new Date(data.uploadCloseAt);
+        if (now < open || now > close) {
+          document.getElementById("closedNoticeText").innerText = 
+            `${STRINGS[currentLang].windowClosed} (${open.toLocaleDateString()} — ${close.toLocaleDateString()})`;
+          document.getElementById("closedView").style.display = "block";
+          return;
+        }
+
+        // Functions
+        if (data.functions && data.functions.length > 1) {
+          const select = document.getElementById("funcSelect");
+          select.innerHTML = "";
+          data.functions.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.id;
+            opt.innerText = f.name;
+            select.appendChild(opt);
+          });
+          document.getElementById("funcPickerGroup").style.display = "block";
+        }
+
+        document.getElementById("mainView").style.display = "block";
+        restoreStoredQueue();
+      } catch (err) {
+        showError("Failed to connect to server. Please try again.");
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById("loadingView").style.display = "none";
+      const errEl = document.getElementById("errorView");
+      errEl.innerText = msg;
+      errEl.style.display = "block";
+    }
+
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+
+      document.getElementById("queueContainer").style.display = "block";
+      document.getElementById("thankYouBox").style.display = "none";
+
+      files.forEach(file => {
+        const kind = file.type.startsWith("video") ? "video" : "photo";
+        const item = {
+          id: "f_" + Math.random().toString(36).substring(2, 9),
+          file: file,
+          name: file.name,
+          size: file.size,
+          mime: file.type || "application/octet-stream",
+          kind: kind,
+          state: "queued",
+          progress: 0,
+          storageKey: null,
+          needsConversion: false,
+        };
+        fileQueue.push(item);
+      });
+
+      persistQueueMetadata();
+      renderQueue();
+      processQueue();
+    }
+
+    function persistQueueMetadata() {
+      const meta = fileQueue.map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        mime: item.mime,
+        kind: item.kind,
+        state: item.state === "done" ? "done" : "needs_reselect",
+        storageKey: item.storageKey,
+      }));
+      localStorage.setItem("raunaq_queue_" + guestToken, JSON.stringify(meta));
+    }
+
+    function restoreStoredQueue() {
+      const raw = localStorage.getItem("raunaq_queue_" + guestToken);
+      if (!raw) return;
+      try {
+        const stored = JSON.parse(raw);
+        if (stored.length) {
+          fileQueue = stored.map(s => ({
+            ...s,
+            file: null,
+            progress: s.state === "done" ? 100 : 0
+          }));
+          document.getElementById("queueContainer").style.display = "block";
+          renderQueue();
+        }
+      } catch (_e) {}
+    }
+
+    function renderQueue() {
+      const listEl = document.getElementById("fileList");
+      listEl.innerHTML = "";
+      const s = STRINGS[currentLang];
+
+      let allDone = fileQueue.length > 0;
+      let completedCount = 0;
+
+      fileQueue.forEach(item => {
+        if (item.state !== "done") allDone = false;
+        else completedCount++;
+
+        const div = document.createElement("div");
+        div.className = "file-item";
+
+        let statusText = s.statusQueued;
+        let statusClass = "status-queued";
+        if (item.state === "uploading") {
+          statusText = `${s.statusUploading} ${item.progress}%`;
+          statusClass = "status-uploading";
+        } else if (item.state === "confirming") {
+          statusText = s.statusConfirming;
+          statusClass = "status-confirming";
+        } else if (item.state === "done") {
+          statusText = s.statusDone;
+          statusClass = "status-done";
+        } else if (item.state === "failed") {
+          statusText = s.statusFailed;
+          statusClass = "status-failed";
+        } else if (item.state === "needs_reselect") {
+          statusText = s.reselectBtn;
+          statusClass = "status-failed";
+        }
+
+        let inner = `
+          <div class="file-header">
+            <span class="file-name" title="${item.name}">${item.name}</span>
+            <span class="file-status ${statusClass}">${statusText}</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: ${item.progress}%"></div>
+          </div>
+        `;
+
+        if (item.state === "failed" && item.file) {
+          inner += `<button class="btn-retry" onclick="retryUpload('${item.id}')">${s.retryBtn}</button>`;
+        } else if (item.state === "needs_reselect") {
+          inner += `<button class="btn-retry" onclick="document.getElementById('fileInput').click()">${s.reselectBtn}</button>`;
+        }
+
+        div.innerHTML = inner;
+        listEl.appendChild(div);
+      });
+
+      if (allDone && completedCount > 0) {
+        const thankBox = document.getElementById("thankYouBox");
+        thankBox.style.display = "block";
+        document.getElementById("thankYouText").innerText = 
+          `${s.thankYouText} (${completedCount} uploaded)`;
+      }
+    }
+
+    async function processQueue() {
+      for (const item of fileQueue) {
+        if (item.state === "queued" && item.file) {
+          await uploadItem(item);
+        }
+      }
+    }
+
+    function retryUpload(id) {
+      const item = fileQueue.find(f => f.id === id);
+      if (item && item.file) {
+        item.state = "queued";
+        item.progress = 0;
+        renderQueue();
+        uploadItem(item);
+      }
+    }
+
+    async function uploadItem(item) {
+      item.state = "uploading";
+      item.progress = 0;
+      renderQueue();
+
+      const guestName = document.getElementById("guestNameInput").value;
+      const funcSelect = document.getElementById("funcSelect");
+      const functionId = funcSelect && funcSelect.value ? funcSelect.value : null;
+
+      try {
+        // Step 1: Sign
+        const signRes = await fetch(`${API_BASE}/sign-upload`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: guestToken,
+            functionId,
+            fileName: item.name,
+            mime: item.mime,
+            sizeBytes: item.size,
+            kind: item.kind,
+          })
+        });
+
+        const signData = await signRes.json();
+        if (!signRes.ok) {
+          throw new Error(signData.error || "Failed to sign upload");
+        }
+
+        item.storageKey = signData.storageKey;
+
+        // Step 2: Upload to B2 S3
+        if (signData.mode === "single") {
+          await uploadSinglePart(item, signData.presignedUrl);
+          item.progress = 95;
+          item.state = "confirming";
+          renderQueue();
+
+          // Step 3: Confirm
+          await confirmUpload(item, {
+            token: guestToken,
+            storageKey: item.storageKey,
+            sizeBytes: item.size,
+            mime: item.mime,
+            kind: item.kind,
+            functionId,
+            guestName,
+          });
+        } else if (signData.mode === "multipart") {
+          const completedParts = await uploadMultipart(item, signData);
+          item.progress = 95;
+          item.state = "confirming";
+          renderQueue();
+
+          await confirmUpload(item, {
+            token: guestToken,
+            storageKey: item.storageKey,
+            uploadId: signData.uploadId,
+            parts: completedParts,
+            sizeBytes: item.size,
+            mime: item.mime,
+            kind: item.kind,
+            functionId,
+            guestName,
+          });
+        }
+
+        item.progress = 100;
+        item.state = "done";
+        persistQueueMetadata();
+        renderQueue();
+      } catch (err) {
+        console.error("Upload error for", item.name, err);
+        item.state = "failed";
+        persistQueueMetadata();
+        renderQueue();
+      }
+    }
+
+    function uploadSinglePart(item, presignedUrl) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", presignedUrl, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            item.progress = Math.min(90, Math.round((e.loaded / e.total) * 90));
+            renderQueue();
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error("Storage PUT rejected with status: " + xhr.status));
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(item.file);
+      });
+    }
+
+    async function uploadMultipart(item, signData) {
+      const completedParts = [];
+      const partSize = signData.partSize;
+      const totalParts = signData.parts.length;
+
+      for (let i = 0; i < totalParts; i++) {
+        const p = signData.parts[i];
+        const start = (p.partNumber - 1) * partSize;
+        const end = Math.min(item.size, start + partSize);
+        const chunk = item.file.slice(start, end);
+
+        const etag = await uploadChunk(chunk, p.presignedUrl, (chunkProgress) => {
+          const overallLoaded = start + (chunkProgress * (end - start));
+          item.progress = Math.min(90, Math.round((overallLoaded / item.size) * 90));
+          renderQueue();
+        });
+
+        completedParts.push({ PartNumber: p.partNumber, ETag: etag });
+      }
+
+      return completedParts;
+    }
+
+    function uploadChunk(blob, presignedUrl, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", presignedUrl, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) {
+            onProgress(e.loaded / e.total);
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const etag = xhr.getResponseHeader("ETag") || "";
+            resolve(etag.replace(/^"|"$/g, ''));
+          } else {
+            reject(new Error("Part PUT rejected: " + xhr.status));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error on part upload"));
+        xhr.send(blob);
+      });
+    }
+
+    async function confirmUpload(item, confirmPayload) {
+      const res = await fetch(`${API_BASE}/confirm-upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(confirmPayload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.status !== "confirmed") {
+        throw new Error(data.error || "Confirmation failed");
+      }
+      item.needsConversion = Boolean(data.needsConversion);
+    }
+
+    init();
+  </script>
+</body>
+</html>
