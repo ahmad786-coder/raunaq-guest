@@ -180,6 +180,105 @@
       border-radius: var(--radius);
       margin-top: 20px;
     }
+    /* Voice Message Section */
+    .voice-section {
+      margin-top: 24px;
+      padding: 18px 16px;
+      border: 1px dashed #d1d5db;
+      border-radius: var(--radius);
+      background: #fafaf9;
+      text-align: center;
+    }
+    .voice-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .voice-timer {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .recording-pulse {
+      width: 12px;
+      height: 12px;
+      background: #dc2626;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+    .btn-record {
+      width: 100%;
+      background: #ffffff;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      padding: 12px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-record:active {
+      background: #fdf2f4;
+    }
+    .btn-stop-record {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+    .btn-stop-record:active {
+      background: #b91c1c;
+    }
+    .voice-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .voice-actions button {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .voice-actions .btn-send-audio {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      font-weight: 700;
+    }
+    .voice-error {
+      color: var(--error);
+      font-size: 13px;
+      margin-top: 8px;
+      padding: 6px;
+      background: #fee2e2;
+      border-radius: 6px;
+    }
+    audio {
+      width: 100%;
+      height: 36px;
+      margin-top: 8px;
+    }
     .thank-you-title {
       font-size: 18px;
       font-weight: 700;
@@ -222,6 +321,39 @@
         📸 Add Photos & Videos
       </button>
 
+      <div class="voice-section" id="voiceSection">
+        <div class="voice-title" id="voiceTitle">🎤 Leave a Voice Message</div>
+        
+        <!-- Idle State -->
+        <div id="voiceIdle">
+          <button class="btn-record" id="btnStartRecord" onclick="startRecording()">
+            <span id="btnRecordText">🔴 Start Recording</span>
+          </button>
+        </div>
+
+        <!-- Recording State -->
+        <div id="voiceRecording" style="display:none;">
+          <div class="voice-timer">
+            <span class="recording-pulse"></span>
+            <span id="recordingTimer">0:00</span>
+          </div>
+          <button class="btn-record btn-stop-record" id="btnStopRecord" onclick="stopRecording()">
+            <span id="btnStopRecordText">⏹ Stop Recording</span>
+          </button>
+        </div>
+
+        <!-- Recorded State (Preview & Actions) -->
+        <div id="voiceRecorded" style="display:none;">
+          <audio id="audioPreview" controls playsinline></audio>
+          <div class="voice-actions">
+            <button id="btnRerecord" onclick="rerecordAudio()">🔄 Re-record</button>
+            <button class="btn-send-audio" id="btnSendAudio" onclick="sendAudioMessage()">🚀 Send</button>
+          </div>
+        </div>
+
+        <div id="voiceError" class="voice-error" style="display:none;"></div>
+      </div>
+
       <div id="queueContainer" style="display:none;">
         <div class="queue-title" id="queueTitle">Upload Progress</div>
         <div id="fileList"></div>
@@ -257,6 +389,15 @@
         thankYouText: "Your photos and videos are safely with the host.",
         windowClosed: "The upload window for this event is closed.",
         eventNotFound: "Event not found. Please check or re-scan your table QR code.",
+        voiceTitle: "🎤 Leave a Voice Message",
+        btnRecordText: "🔴 Start Recording",
+        btnStopRecordText: "⏹ Stop Recording",
+        btnRerecord: "🔄 Re-record",
+        btnSendAudio: "🚀 Send Voice Message",
+        voiceNoteName: "Voice Note",
+        rerecordNotice: "Audio lost. Please re-record.",
+        micError: "Microphone unavailable or permission denied. Please allow microphone access.",
+        micUnsupported: "Voice recording is not supported in this browser.",
       },
       ur: {
         brand: "رونق • Raunaq",
@@ -279,6 +420,15 @@
         thankYouText: "آپ کی تصاویر بحفاظت میزبان تک پہنچ چکی ہیں۔",
         windowClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
         eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
+        voiceTitle: "🎤 وائس میسج ریکارڈ کریں",
+        btnRecordText: "🔴 ریکارڈنگ شروع کریں",
+        btnStopRecordText: "⏹ ریکارڈنگ مکمل کریں",
+        btnRerecord: "🔄 دوبارہ ریکارڈ کریں",
+        btnSendAudio: "🚀 وائس میسج بھیجیں",
+        voiceNoteName: "وائس نوٹ",
+        rerecordNotice: "آڈیو ضائع ہو گئی۔ براہ کرم دوبارہ ریکارڈ کریں۔",
+        micError: "مائیکروفون دستیاب نہیں یا اجازت نہیں ملی۔ براہ کرم مائیک کی اجازت دیں۔",
+        micUnsupported: "اس براؤزر میں وائس ریکارڈنگ کی سہولت موجود نہیں ہے۔",
       }
     };
 
@@ -315,6 +465,11 @@
       document.getElementById("uploadBtn").innerText = s.uploadBtn;
       document.getElementById("queueTitle").innerText = s.queueTitle;
       document.getElementById("thankYouTitle").innerText = s.thankYouTitle;
+      document.getElementById("voiceTitle").innerText = s.voiceTitle;
+      document.getElementById("btnRecordText").innerText = s.btnRecordText;
+      document.getElementById("btnStopRecordText").innerText = s.btnStopRecordText;
+      document.getElementById("btnRerecord").innerText = s.btnRerecord;
+      document.getElementById("btnSendAudio").innerText = s.btnSendAudio;
       renderQueue();
     }
 
@@ -497,7 +652,11 @@
         if (item.state === "failed" && item.file) {
           inner += `<button class="btn-retry" onclick="retryUpload('${item.id}')">${s.retryBtn}</button>`;
         } else if (item.state === "needs_reselect") {
-          inner += `<button class="btn-retry" onclick="document.getElementById('fileInput').click()">${s.reselectBtn}</button>`;
+          if (item.kind === "audio") {
+            inner += `<button class="btn-retry" onclick="rerecordAudio()">${s.rerecordNotice}</button>`;
+          } else {
+            inner += `<button class="btn-retry" onclick="document.getElementById('fileInput').click()">${s.reselectBtn}</button>`;
+          }
         }
 
         div.innerHTML = inner;
@@ -547,7 +706,7 @@
           body: JSON.stringify({
             token: guestToken,
             functionId,
-            fileName: item.name,
+            fileName: item.fileName || item.name,
             mime: item.mime,
             sizeBytes: item.size,
             kind: item.kind,
@@ -686,7 +845,176 @@
       item.needsConversion = Boolean(data.needsConversion);
     }
 
-    init();
+        // Voice Recording Logic
+    let mediaRecorder = null;
+    let audioStream = null;
+    let audioChunks = [];
+    let recordTimerInterval = null;
+    let recordSeconds = 0;
+    let recordedAudioBlob = null;
+    let recordedMime = "";
+    let baseMime = "";
+    let audioExt = "webm";
+
+    function getSupportedAudioMime() {
+      if (typeof MediaRecorder === "undefined") return null;
+      const candidates = [
+        { full: "audio/webm;codecs=opus", base: "audio/webm", ext: "webm" },
+        { full: "audio/webm", base: "audio/webm", ext: "webm" },
+        { full: "audio/ogg;codecs=opus", base: "audio/ogg", ext: "ogg" },
+        { full: "audio/mp4", base: "audio/mp4", ext: "m4a" },
+      ];
+      for (const c of candidates) {
+        if (MediaRecorder.isTypeSupported(c.full)) return c;
+      }
+      return null;
+    }
+
+    function showVoiceError(msg) {
+      const errEl = document.getElementById("voiceError");
+      errEl.innerText = msg;
+      errEl.style.display = "block";
+    }
+
+    function clearVoiceError() {
+      const errEl = document.getElementById("voiceError");
+      errEl.innerText = "";
+      errEl.style.display = "none";
+    }
+
+    async function startRecording() {
+      clearVoiceError();
+      const s = STRINGS[currentLang];
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+        showVoiceError(s.micUnsupported);
+        return;
+      }
+
+      const mimeConfig = getSupportedAudioMime();
+      if (!mimeConfig) {
+        showVoiceError(s.micUnsupported);
+        return;
+      }
+
+      recordedMime = mimeConfig.full;
+      baseMime = mimeConfig.base;
+      audioExt = mimeConfig.ext;
+
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.error("Mic access error:", err);
+        showVoiceError(s.micError);
+        return;
+      }
+
+      audioChunks = [];
+      try {
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType: recordedMime });
+      } catch (_e) {
+        mediaRecorder = new MediaRecorder(audioStream);
+      }
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        clearInterval(recordTimerInterval);
+        if (audioStream) {
+          audioStream.getTracks().forEach(t => t.stop());
+          audioStream = null;
+        }
+
+        if (audioChunks.length > 0) {
+          recordedAudioBlob = new Blob(audioChunks, { type: recordedMime });
+          const audioUrl = URL.createObjectURL(recordedAudioBlob);
+          const preview = document.getElementById("audioPreview");
+          preview.src = audioUrl;
+
+          document.getElementById("voiceRecording").style.display = "none";
+          document.getElementById("voiceRecorded").style.display = "block";
+        } else {
+          rerecordAudio();
+        }
+      };
+
+      mediaRecorder.start(250);
+      recordSeconds = 0;
+      document.getElementById("recordingTimer").innerText = "0:00";
+      document.getElementById("voiceIdle").style.display = "none";
+      document.getElementById("voiceRecorded").style.display = "none";
+      document.getElementById("voiceRecording").style.display = "block";
+
+      recordTimerInterval = setInterval(() => {
+        recordSeconds++;
+        const mins = Math.floor(recordSeconds / 60);
+        const secs = recordSeconds % 60;
+        document.getElementById("recordingTimer").innerText = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        if (recordSeconds >= 60) {
+          stopRecording();
+        }
+      }, 1000);
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+    }
+
+    function rerecordAudio() {
+      clearInterval(recordTimerInterval);
+      if (audioStream) {
+        audioStream.getTracks().forEach(t => t.stop());
+        audioStream = null;
+      }
+      mediaRecorder = null;
+      audioChunks = [];
+      recordedAudioBlob = null;
+
+      const preview = document.getElementById("audioPreview");
+      preview.src = "";
+
+      document.getElementById("voiceRecording").style.display = "none";
+      document.getElementById("voiceRecorded").style.display = "none";
+      document.getElementById("voiceIdle").style.display = "block";
+      clearVoiceError();
+    }
+
+    function sendAudioMessage() {
+      if (!recordedAudioBlob) return;
+      const s = STRINGS[currentLang];
+      const fileName = `voice_note_${Date.now()}.${audioExt}`;
+
+      document.getElementById("queueContainer").style.display = "block";
+      document.getElementById("thankYouBox").style.display = "none";
+
+      const audioFileItem = {
+        id: "aud_" + Math.random().toString(36).substring(2, 9),
+        file: recordedAudioBlob,
+        name: `🎤 ${s.voiceNoteName} (${recordSeconds}s)`,
+        fileName: fileName,
+        size: recordedAudioBlob.size,
+        mime: baseMime,
+        kind: "audio",
+        state: "queued",
+        progress: 0,
+        storageKey: null,
+        needsConversion: false,
+      };
+
+      fileQueue.push(audioFileItem);
+      renderQueue();
+      processQueue();
+
+      rerecordAudio();
+    }
+
+init();
   </script>
 </body>
 </html>
