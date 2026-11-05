@@ -393,23 +393,29 @@
       document.getElementById("thankYouBox").style.display = "none";
 
       files.forEach(file => {
-        const kind = file.type.startsWith("video") ? "video" : "photo";
-        const item = {
-          id: "f_" + Math.random().toString(36).substring(2, 9),
-          file: file,
-          name: file.name,
-          size: file.size,
-          mime: file.type || "application/octet-stream",
-          kind: kind,
-          state: "queued",
-          progress: 0,
-          storageKey: null,
-          needsConversion: false,
-        };
-        fileQueue.push(item);
+        const existing = fileQueue.find(q => q.name === file.name && q.state === "needs_reselect");
+        if (existing) {
+          existing.file = file;
+          existing.state = "queued";
+          existing.size = file.size;
+          existing.mime = file.type || "application/octet-stream";
+        } else {
+          const kind = file.type.startsWith("video") ? "video" : "photo";
+          fileQueue.push({
+            id: "f_" + Math.random().toString(36).substring(2, 9),
+            file: file,
+            name: file.name,
+            size: file.size,
+            mime: file.type || "application/octet-stream",
+            kind: kind,
+            state: "queued",
+            progress: 0,
+            storageKey: null,
+            needsConversion: false,
+          });
+        }
       });
 
-      persistQueueMetadata();
       renderQueue();
       processQueue();
     }
