@@ -303,6 +303,9 @@
     </div>
 
     <div id="mainView" style="display:none;">
+      <div id="notActiveNotice" class="window-notice" style="display:none; margin-bottom: 20px;">
+        <div id="notActiveNoticeText">This gallery isn't accepting uploads yet — please check back soon.</div>
+      </div>
       <h1 class="event-title" id="eventTitle">Wedding Album</h1>
       <p class="event-subtitle" id="eventSubtitle">Upload your photos & videos to celebrate with the couple.</p>
 
@@ -389,6 +392,7 @@
         thankYouTitle: "Thank you!",
         thankYouText: "Your photos and videos are safely with the host.",
         windowClosed: "The upload window for this event is closed.",
+        galleryNotAccepting: "This gallery isn't accepting uploads yet — please check back soon.",
         eventNotFound: "Event not found. Please check or re-scan your table QR code.",
         voiceTitle: "🎤 Leave a Voice Message",
         btnRecordText: "🔴 Start Recording",
@@ -421,6 +425,7 @@
         thankYouTitle: "بہت شکریہ!",
         thankYouText: "آپ کی تصاویر بحفاظت میزبان تک پہنچ چکی ہیں۔",
         windowClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
+        galleryNotAccepting: "یہ گیلری ابھی اپلوڈز قبول نہیں کر رہی — براہ کرم جلد دوبارہ چیک کریں۔",
         eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
         voiceTitle: "🎤 وائس میسج ریکارڈ کریں",
         btnRecordText: "🔴 ریکارڈنگ شروع کریں",
@@ -466,6 +471,8 @@
       document.getElementById("guestNameInput").placeholder = s.namePlaceholder;
       document.getElementById("uploadBtn").innerText = s.uploadBtn;
       document.getElementById("queueTitle").innerText = s.queueTitle;
+      const notActiveEl = document.getElementById("notActiveNoticeText");
+      if (notActiveEl) notActiveEl.innerText = s.galleryNotAccepting;
       document.getElementById("thankYouTitle").innerText = s.thankYouTitle;
       document.getElementById("voiceTitle").innerText = s.voiceTitle;
       document.getElementById("btnRecordText").innerText = s.btnRecordText;
@@ -513,6 +520,29 @@
             `${STRINGS[currentLang].windowClosed} (${open.toLocaleDateString()} — ${close.toLocaleDateString()})`;
           document.getElementById("closedView").style.display = "block";
           return;
+        }
+
+        // Check payment enforcement gate (uploadsOpen)
+        if (data.uploadsOpen === false) {
+          const s = STRINGS[currentLang];
+          document.getElementById("notActiveNoticeText").innerText = s.galleryNotAccepting;
+          document.getElementById("notActiveNotice").style.display = "block";
+          
+          // Disable upload controls and voice-record controls
+          const upBtn = document.getElementById("uploadBtn");
+          if (upBtn) {
+            upBtn.disabled = true;
+            upBtn.style.opacity = "0.5";
+            upBtn.style.cursor = "not-allowed";
+            upBtn.onclick = null;
+          }
+          const startRecBtn = document.getElementById("btnStartRecord");
+          if (startRecBtn) {
+            startRecBtn.disabled = true;
+            startRecBtn.style.opacity = "0.5";
+            startRecBtn.style.cursor = "not-allowed";
+            startRecBtn.onclick = null;
+          }
         }
 
         // Functions
@@ -767,7 +797,9 @@
       } catch (err) {
         console.error("Upload error for", item.name, err);
         item.state = "failed";
-        if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
+        if (err && (err.code === "EVENT_NOT_ACTIVE" || (err.message && err.message.includes("EVENT_NOT_ACTIVE")))) {
+          item.errorMessage = STRINGS[currentLang].galleryNotAccepting || "This gallery isn't accepting uploads yet — please check back soon.";
+        } else if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
           item.errorMessage = "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.";
         }
         persistQueueMetadata();
