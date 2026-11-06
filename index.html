@@ -383,6 +383,7 @@
         statusConfirming: "Confirming...",
         statusDone: "✓ Uploaded",
         statusFailed: "Failed",
+        statusPaused: "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.",
         retryBtn: "Retry",
         reselectBtn: "Re-select file",
         thankYouTitle: "Thank you!",
@@ -414,6 +415,7 @@
         statusConfirming: "تصدیق ہو رہی ہے...",
         statusDone: "✓ محفوظ ہو گئی",
         statusFailed: "ناکامی",
+        statusPaused: "اس وقت اس تقریب کے لیے اپلوڈز معطل ہیں۔ آپ کی تصویر قطار میں محفوظ ہے — براہ کرم بعد میں دوبارہ کوشش کریں۔",
         retryBtn: "دوبارہ کوشش کریں",
         reselectBtn: "فائل دوبارہ منتخب کریں",
         thankYouTitle: "بہت شکریہ!",
@@ -632,7 +634,7 @@
           statusText = s.statusDone;
           statusClass = "status-done";
         } else if (item.state === "failed") {
-          statusText = s.statusFailed;
+          statusText = item.errorMessage || s.statusFailed;
           statusClass = "status-failed";
         } else if (item.state === "needs_reselect") {
           statusText = s.reselectBtn;
@@ -715,7 +717,9 @@
 
         const signData = await signRes.json();
         if (!signRes.ok) {
-          throw new Error(signData.error || "Failed to sign upload");
+          const err = new Error(signData.error || "Failed to sign upload");
+          err.code = signData.code;
+          throw err;
         }
 
         item.storageKey = signData.storageKey;
@@ -763,6 +767,9 @@
       } catch (err) {
         console.error("Upload error for", item.name, err);
         item.state = "failed";
+        if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
+          item.errorMessage = "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.";
+        }
         persistQueueMetadata();
         renderQueue();
       }
