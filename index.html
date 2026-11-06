@@ -83,7 +83,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Nastaliq Urdu", "Urdu Typesetting", sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.5;
@@ -117,9 +117,34 @@
       color: var(--primary);
       padding: 4px 12px;
       border-radius: 20px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.5px;
+    }
+    .lang-toggle .active-lang {
+      font-weight: 800;
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    .app-container[dir="rtl"] {
+      direction: rtl;
+      text-align: right;
+    }
+    .app-container[dir="rtl"] .header {
+      flex-direction: row-reverse;
+    }
+    .app-container[dir="rtl"] .file-header {
+      flex-direction: row-reverse;
+    }
+    .app-container[dir="rtl"] .btn-retry {
+      align-self: flex-start;
+    }
+    .app-container[dir="rtl"] .voice-actions {
+      flex-direction: row-reverse;
     }
     .mehrab-frame {
       position: relative;
@@ -386,7 +411,7 @@
   <div class="app-container" id="app">
     <div class="header">
       <div class="brand">Raunaq • رونق</div>
-      <button class="lang-toggle" id="langBtn" onclick="toggleLanguage()">اردو</button>
+      <button class="lang-toggle" id="langBtn" onclick="toggleLanguage()" aria-label="Switch language">EN | اردو</button>
     </div>
 
     <div id="loadingView">Loading wedding moments...</div>
@@ -482,7 +507,6 @@
     const STRINGS = {
       en: {
         brand: "Raunaq • رونق",
-        langBtn: "اردو",
         loading: "Loading wedding moments...",
         eventSubtitle: "Upload your photos & videos to celebrate with the couple.",
         funcLabel: "Event Function",
@@ -503,7 +527,9 @@
         windowClosed: "The upload window for this event is closed.",
         galleryClosed: "This event's gallery has closed.",
         galleryNotAccepting: "This gallery isn't accepting uploads yet — please check back soon.",
+        eventFull: "Event storage cap reached. Upload rejected.",
         eventNotFound: "Event not found. Please check or re-scan your table QR code.",
+        connError: "Failed to connect to server. Please try again.",
         voiceTitle: "🎤 Leave a Voice Message",
         btnRecordText: "🔴 Start Recording",
         btnStopRecordText: "⏹ Stop Recording",
@@ -516,7 +542,6 @@
       },
       ur: {
         brand: "رونق • Raunaq",
-        langBtn: "English",
         loading: "شادی کی یادیں لوڈ ہو رہی ہیں...",
         eventSubtitle: "دولہا دلہن کے ساتھ یادگار لمحات شیئر کرنے کے لیے تصاویر اور ویڈیوز شامل کریں۔",
         funcLabel: "تقریب",
@@ -537,7 +562,9 @@
         windowClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
         galleryClosed: "اس تقریب کی گیلری بند ہو چکی ہے۔",
         galleryNotAccepting: "یہ گیلری ابھی اپلوڈز قبول نہیں کر رہی — براہ کرم جلد دوبارہ چیک کریں۔",
+        eventFull: "اس تقریب کی اسٹوریج گنجائش مکمل ہو چکی ہے۔",
         eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
+        connError: "سرور سے رابطہ نہ ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
         voiceTitle: "🎤 وائس میسج ریکارڈ کریں",
         btnRecordText: "🔴 ریکارڈنگ شروع کریں",
         btnStopRecordText: "⏹ ریکارڈنگ مکمل کریں",
@@ -571,10 +598,24 @@
     // Always route API calls to Supabase Cloud Edge Functions
     const API_BASE = "https://qsglzqpecupjemibjoem.supabase.co/functions/v1";
 
+    function updateLangToggle() {
+      const btn = document.getElementById("langBtn");
+      if (!btn) return;
+      if (currentLang === "ur") {
+        btn.innerHTML = '<span>EN</span> | <span class="active-lang">اردو</span>';
+      } else {
+        btn.innerHTML = '<span class="active-lang">EN</span> | <span>اردو</span>';
+      }
+    }
+
     function applyStrings() {
       const s = STRINGS[currentLang];
-      document.documentElement.setAttribute("dir", currentLang === "ur" ? "rtl" : "ltr");
-      document.getElementById("langBtn").innerText = s.langBtn;
+      // Scope dir to app container to keep layout chrome stable
+      const appContainer = document.getElementById("app");
+      if (appContainer) {
+        appContainer.setAttribute("dir", currentLang === "ur" ? "rtl" : "ltr");
+      }
+      updateLangToggle();
       document.getElementById("loadingView").innerText = s.loading;
       document.getElementById("eventSubtitle").innerText = s.eventSubtitle;
       document.getElementById("funcLabel").innerText = s.funcLabel;
@@ -583,7 +624,15 @@
       document.getElementById("uploadBtn").innerText = s.uploadBtn;
       document.getElementById("queueTitle").innerText = s.queueTitle;
       const notActiveEl = document.getElementById("notActiveNoticeText");
-      if (notActiveEl) notActiveEl.innerText = s.galleryNotAccepting;
+      if (notActiveEl && eventData) {
+        if (eventData.expired) {
+          notActiveEl.innerText = s.galleryClosed;
+        } else if (eventData.uploadsOpen === false) {
+          notActiveEl.innerText = s.galleryNotAccepting;
+        }
+      } else if (notActiveEl) {
+        notActiveEl.innerText = s.galleryNotAccepting;
+      }
       document.getElementById("thankYouTitle").innerText = s.thankYouTitle;
       document.getElementById("voiceTitle").innerText = s.voiceTitle;
       document.getElementById("btnRecordText").innerText = s.btnRecordText;
@@ -709,7 +758,7 @@
         document.getElementById("mainView").style.display = "block";
         restoreStoredQueue();
       } catch (err) {
-        showError("Failed to connect to server. Please try again.");
+        showError(STRINGS[currentLang].connError || "Failed to connect to server. Please try again.");
       }
     }
 
@@ -950,7 +999,9 @@
         } else if (err && (err.code === "EVENT_NOT_ACTIVE" || (err.message && err.message.includes("EVENT_NOT_ACTIVE")))) {
           item.errorMessage = STRINGS[currentLang].galleryNotAccepting || "This gallery isn't accepting uploads yet — please check back soon.";
         } else if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
-          item.errorMessage = "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.";
+          item.errorMessage = STRINGS[currentLang].statusPaused;
+        } else if (err && (err.code === "EVENT_STORAGE_FULL" || (err.message && err.message.includes("EVENT_STORAGE_FULL")))) {
+          item.errorMessage = STRINGS[currentLang].eventFull || "Event storage cap reached. Upload rejected.";
         }
         persistQueueMetadata();
         renderQueue();
