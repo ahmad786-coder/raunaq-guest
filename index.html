@@ -517,6 +517,7 @@
         statusQueued: "Queued",
         statusUploading: "Uploading...",
         statusConfirming: "Confirming...",
+        statusRetrying: "Retrying…",
         statusDone: "✓ Uploaded",
         statusFailed: "Failed",
         statusPaused: "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.",
@@ -552,6 +553,7 @@
         statusQueued: "قطار میں ہے",
         statusUploading: "اپلوڈ جاری ہے...",
         statusConfirming: "تصدیق ہو رہی ہے...",
+        statusRetrying: "دوبارہ کوشش جاری ہے…",
         statusDone: "✓ محفوظ ہو گئی",
         statusFailed: "ناکامی",
         statusPaused: "اس وقت اس تقریب کے لیے اپلوڈز معطل ہیں۔ آپ کی تصویر قطار میں محفوظ ہے — براہ کرم بعد میں دوبارہ کوشش کریں۔",
@@ -867,6 +869,9 @@
         } else if (item.state === "confirming") {
           statusText = s.statusConfirming;
           statusClass = "status-confirming";
+        } else if (item.state === "retrying") {
+          statusText = s.statusRetrying;
+          statusClass = "status-confirming";
         } else if (item.state === "done") {
           statusText = s.statusDone;
           statusClass = "status-done";
@@ -1086,16 +1091,51 @@
     }
 
     async function confirmUpload(item, confirmPayload) {
-      const res = await fetch(`${API_BASE}/confirm-upload`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(confirmPayload)
-      });
-      const data = await res.json();
-      if (!res.ok || data.status !== "confirmed") {
-        throw new Error(data.error || "Confirmation failed");
+      let attempt = 0;
+      while (attempt < 2) {
+        attempt++;
+        try {
+          const res = await fetch(`${API_BASE}/confirm-upload`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(confirmPayload)
+          });
+
+          // 4xx client errors (cap, gate, expiry) surface immediately without auto-retry
+          if (res.status >= 400 && res.status < 500) {
+            const data = await res.json().catch(() => ({}));
+            const err = new Error(data.error || "Confirmation failed");
+            err.code = data.code;
+            throw err;
+          }
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Server error (${res.status})`);
+          }
+
+          const data = await res.json();
+          if (data.status !== "confirmed") {
+            throw new Error(data.error || "Confirmation failed");
+          }
+          item.needsConversion = Boolean(data.needsConversion);
+          return;
+        } catch (err) {
+          // If 4xx client error, immediately re-throw
+          if (err.code && (err.code.startsWith("EVENT_") || err.code === "GLOBAL_STORAGE_FULL" || err.code === "INVALID_REQUEST")) {
+            throw err;
+          }
+          // On first failure of 5xx or network connection drop, auto-retry once after ~1.5s
+          if (attempt === 1) {
+            console.warn(`Confirm-upload failed (attempt 1), auto-retrying in 1.5s for ${item.name}:`, err.message);
+            item.state = "retrying";
+            renderQueue();
+            await new Promise(r => setTimeout(r, 1500));
+            continue;
+          }
+          throw err;
+        }
       }
-      item.needsConversion = Boolean(data.needsConversion);
     }
 
         // Voice Recording Logic
