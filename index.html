@@ -596,6 +596,16 @@
     guestToken = getToken();
 
     // Always route API calls to Supabase Cloud Edge Functions
+        // Anonymous uploader key: random UUID per browser, zero PII
+    let uploaderKey = localStorage.getItem('raunaq_guest_key');
+    if (!uploaderKey) {
+      uploaderKey = 'u_' + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      localStorage.setItem('raunaq_guest_key', uploaderKey);
+    }
+
     const API_BASE = "https://qsglzqpecupjemibjoem.supabase.co/functions/v1";
 
     function updateLangToggle() {
@@ -939,6 +949,7 @@
             mime: item.mime,
             sizeBytes: item.size,
             kind: item.kind,
+            uploaderKey: uploaderKey,
           })
         });
 
@@ -967,6 +978,7 @@
             kind: item.kind,
             functionId,
             guestName,
+            uploaderKey: uploaderKey,
           });
         } else if (signData.mode === "multipart") {
           const completedParts = await uploadMultipart(item, signData);
@@ -984,6 +996,7 @@
             kind: item.kind,
             functionId,
             guestName,
+            uploaderKey: uploaderKey,
           });
         }
 
