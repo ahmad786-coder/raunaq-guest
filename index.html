@@ -5,17 +5,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Raunaq (رونق) — Wedding Moments</title>
   <style>
-    :root {
+    :root,
+    [data-theme="baraat"] {
       --primary: #881337;
       --primary-hover: #700f2d;
-      --bg: #faf7f5;
+      --accent: #C6A15B;
+      --bg: #FFFBF3;
       --card-bg: #ffffff;
-      --text: #1f2937;
+      --text: #241A1E;
       --text-muted: #6b7280;
-      --border: #e5e7eb;
+      --border: #FCE7EC;
+      --hairline: #C6A15B;
+      --arch-bg: #FDF2F4;
       --success: #15803d;
       --error: #b91c1c;
-      --radius: 12px;
+      --radius: 16px;
+    }
+    [data-theme="mehndi"] {
+      --primary: #B45309;
+      --primary-hover: #92400E;
+      --accent: #3F7A1E;
+      --bg: #FFF9E8;
+      --card-bg: #ffffff;
+      --text: #241A1E;
+      --text-muted: #78716C;
+      --border: #FDE68A;
+      --hairline: #C6A15B;
+      --arch-bg: #FEF3C7;
+      --success: #15803d;
+      --error: #b91c1c;
+      --radius: 16px;
+    }
+    [data-theme="walima"] {
+      --primary: #2F4858;
+      --primary-hover: #1E2F39;
+      --accent: #C6A15B;
+      --bg: #F7F5EF;
+      --card-bg: #ffffff;
+      --text: #1E293B;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --hairline: #C6A15B;
+      --arch-bg: #ECEAE4;
+      --success: #15803d;
+      --error: #b91c1c;
+      --radius: 16px;
+    }
+
+    /* Micro-animations */
+    @keyframes fadeRise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes archShimmer {
+      0% { stroke-dashoffset: 600; opacity: 0.6; }
+      50% { stroke-dashoffset: 0; opacity: 1; }
+      100% { stroke-dashoffset: -600; opacity: 0.6; }
+    }
+    .app-container {
+      animation: fadeRise 0.4s ease-out;
+    }
+    .mehrab-hairline {
+      stroke-dasharray: 600;
+      animation: archShimmer 6s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .app-container,
+      .mehrab-hairline {
+        animation: none !important;
+      }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -57,17 +121,48 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .event-title {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 6px;
+    .mehrab-frame {
+      position: relative;
+      margin: 0 auto 16px auto;
+      padding: 32px 16px 20px 16px;
       text-align: center;
+      background: var(--arch-bg);
+      border-radius: 120px 120px 16px 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .mehrab-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .event-title {
+      font-family: "Playfair Display", "Georgia", "Times New Roman", serif;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 8px;
+      text-align: center;
+      color: var(--primary);
+      position: relative;
+      letter-spacing: 0.2px;
     }
     .event-subtitle {
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--text-muted);
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .botanical-divider {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px auto 4px auto;
+      color: var(--hairline);
     }
     .window-notice {
       background: #fef2f2;
@@ -306,8 +401,22 @@
       <div id="notActiveNotice" class="window-notice" style="display:none; margin-bottom: 20px;">
         <div id="notActiveNoticeText">This gallery isn't accepting uploads yet — please check back soon.</div>
       </div>
-      <h1 class="event-title" id="eventTitle">Wedding Album</h1>
-      <p class="event-subtitle" id="eventSubtitle">Upload your photos & videos to celebrate with the couple.</p>
+      <div class="mehrab-frame">
+        <svg class="mehrab-svg" viewBox="0 0 400 180" preserveAspectRatio="none" aria-hidden="true">
+          <path class="mehrab-hairline" d="M 10 180 L 10 90 C 10 30, 90 10, 190 6 Q 200 2, 210 6 C 310 10, 390 30, 390 90 L 390 180" fill="none" stroke="var(--hairline)" stroke-width="1.2" />
+        </svg>
+        <h1 class="event-title" id="eventTitle">Wedding Album</h1>
+        <div class="botanical-divider" aria-hidden="true">
+          <svg width="120" height="12" viewBox="0 0 120 12" fill="none">
+            <line x1="0" y1="6" x2="42" y2="6" stroke="var(--hairline)" stroke-width="1" />
+            <circle cx="48" cy="6" r="2" fill="var(--hairline)" />
+            <path d="M 60 2 Q 62 6, 66 6 Q 62 6, 60 10 Q 58 6, 54 6 Q 58 6, 60 2 Z" fill="var(--hairline)" />
+            <circle cx="72" cy="6" r="2" fill="var(--hairline)" />
+            <line x1="78" y1="6" x2="120" y2="6" stroke="var(--hairline)" stroke-width="1" />
+          </svg>
+        </div>
+        <p class="event-subtitle" id="eventSubtitle">Upload your photos & videos to celebrate with the couple.</p>
+      </div>
 
       <div class="form-group" id="funcPickerGroup" style="display:none;">
         <label id="funcLabel">Event Function</label>
@@ -484,6 +593,22 @@
       renderQueue();
     }
 
+    
+    function resolveThemeKey(name) {
+      if (!name) return "baraat";
+      const s = String(name).toLowerCase();
+      if (s.includes("mehndi")) return "mehndi";
+      if (s.includes("baraat")) return "baraat";
+      if (s.includes("walima")) return "walima";
+      return "baraat";
+    }
+
+    function applyThemeByName(name) {
+      const key = resolveThemeKey(name);
+      document.documentElement.setAttribute("data-theme", key);
+      return key;
+    }
+
     function toggleLanguage() {
       currentLang = currentLang === "en" ? "ur" : "en";
       localStorage.setItem("raunaq_lang", currentLang);
@@ -555,17 +680,30 @@
           }
         }
 
-        // Functions
-        if (data.functions && data.functions.length > 1) {
-          const select = document.getElementById("funcSelect");
-          select.innerHTML = "";
-          data.functions.forEach(f => {
-            const opt = document.createElement("option");
-            opt.value = f.id;
-            opt.innerText = f.name;
-            select.appendChild(opt);
-          });
-          document.getElementById("funcPickerGroup").style.display = "block";
+        // Functions & Theme Resolution
+        if (data.functions && data.functions.length > 0) {
+          // Apply initial theme from first function
+          applyThemeByName(data.functions[0].name);
+
+          if (data.functions.length > 1) {
+            const select = document.getElementById("funcSelect");
+            select.innerHTML = "";
+            data.functions.forEach(f => {
+              const opt = document.createElement("option");
+              opt.value = f.id;
+              opt.innerText = f.name;
+              opt.setAttribute("data-func-name", f.name);
+              select.appendChild(opt);
+            });
+            select.onchange = function() {
+              const selectedOpt = select.options[select.selectedIndex];
+              const fName = selectedOpt ? selectedOpt.getAttribute("data-func-name") || selectedOpt.innerText : "";
+              applyThemeByName(fName);
+            };
+            document.getElementById("funcPickerGroup").style.display = "block";
+          }
+        } else {
+          applyThemeByName(data.title || "baraat");
         }
 
         document.getElementById("mainView").style.display = "block";
