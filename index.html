@@ -392,6 +392,7 @@
         thankYouTitle: "Thank you!",
         thankYouText: "Your photos and videos are safely with the host.",
         windowClosed: "The upload window for this event is closed.",
+        galleryClosed: "This event's gallery has closed.",
         galleryNotAccepting: "This gallery isn't accepting uploads yet — please check back soon.",
         eventNotFound: "Event not found. Please check or re-scan your table QR code.",
         voiceTitle: "🎤 Leave a Voice Message",
@@ -425,6 +426,7 @@
         thankYouTitle: "بہت شکریہ!",
         thankYouText: "آپ کی تصاویر بحفاظت میزبان تک پہنچ چکی ہیں۔",
         windowClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
+        galleryClosed: "اس تقریب کی گیلری بند ہو چکی ہے۔",
         galleryNotAccepting: "یہ گیلری ابھی اپلوڈز قبول نہیں کر رہی — براہ کرم جلد دوبارہ چیک کریں۔",
         eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
         voiceTitle: "🎤 وائس میسج ریکارڈ کریں",
@@ -523,7 +525,15 @@
         }
 
         // Check payment enforcement gate (uploadsOpen)
-        if (data.uploadsOpen === false) {
+        if (data.expired) {
+          const s = STRINGS[currentLang];
+          document.getElementById("notActiveNoticeText").innerText = s.galleryClosed || "This event's gallery has closed.";
+          document.getElementById("notActiveNotice").style.display = "block";
+          const upBtn = document.getElementById("uploadBtn");
+          if (upBtn) { upBtn.disabled = true; upBtn.style.opacity = "0.5"; upBtn.style.cursor = "not-allowed"; upBtn.onclick = null; }
+          const startRecBtn = document.getElementById("btnStartRecord");
+          if (startRecBtn) { startRecBtn.disabled = true; startRecBtn.style.opacity = "0.5"; startRecBtn.style.cursor = "not-allowed"; startRecBtn.onclick = null; }
+        } else if (data.uploadsOpen === false) {
           const s = STRINGS[currentLang];
           document.getElementById("notActiveNoticeText").innerText = s.galleryNotAccepting;
           document.getElementById("notActiveNotice").style.display = "block";
@@ -797,7 +807,9 @@
       } catch (err) {
         console.error("Upload error for", item.name, err);
         item.state = "failed";
-        if (err && (err.code === "EVENT_NOT_ACTIVE" || (err.message && err.message.includes("EVENT_NOT_ACTIVE")))) {
+        if (err && (err.code === "EVENT_EXPIRED" || (err.message && err.message.includes("EVENT_EXPIRED")))) {
+          item.errorMessage = STRINGS[currentLang].galleryClosed || "This event's gallery has closed.";
+        } else if (err && (err.code === "EVENT_NOT_ACTIVE" || (err.message && err.message.includes("EVENT_NOT_ACTIVE")))) {
           item.errorMessage = STRINGS[currentLang].galleryNotAccepting || "This gallery isn't accepting uploads yet — please check back soon.";
         } else if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
           item.errorMessage = "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.";
