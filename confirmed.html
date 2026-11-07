@@ -82,6 +82,36 @@
       line-height: 1.6;
       margin-bottom: 28px;
     }
+    .btn-login {
+      display: block;
+      width: 100%;
+      background: var(--burgundy);
+      color: #FFFFFF;
+      text-decoration: none;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      transition: background 0.2s ease;
+      box-sizing: border-box;
+    }
+    .btn-login:hover {
+      background: var(--burgundy-dark);
+    }
+    .btn-urdu-sub {
+      display: block;
+      font-size: 14px;
+      color: var(--burgundy);
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .fallback-note {
+      font-size: 13px;
+      color: #64748B;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
     .badge {
       display: inline-block;
       padding: 10px 20px;
@@ -104,6 +134,9 @@
     </div>
     <h1>Email confirmed</h1>
     <p>Your Raunaq host account is ready. Open the app and sign in.</p>
+    <a href="intent://login#Intent;scheme=raunaq;package=com.example.raunaq;end" class="btn-login">Open the Raunaq app to sign in</a>
+    <span class="btn-urdu-sub">سائن ان کے لیے رونق ایپ کھولیں</span>
+    <div class="fallback-note">Opened your email on another device? Open the Raunaq app on your phone and sign in there. · اگر ای میل کسی اور ڈیوائس پر کھولی ہے تو اپنے فون پر رونق ایپ کھول کر سائن ان کریں۔</div>
     <div class="badge">Ready to Celebrate</div>
   </main>
 </body>
