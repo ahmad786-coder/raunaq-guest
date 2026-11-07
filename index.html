@@ -611,6 +611,7 @@
     }
 
     const API_BASE = "https://qsglzqpecupjemibjoem.supabase.co/functions/v1";
+    let validFunctionIds = new Set();
 
     function updateLangToggle() {
       const btn = document.getElementById("langBtn");
@@ -744,29 +745,30 @@
         }
 
         // Functions & Theme Resolution
+        validFunctionIds.clear();
         if (data.functions && data.functions.length > 0) {
-          // Apply initial theme from first function
+          data.functions.forEach(f => validFunctionIds.add(f.id));
           applyThemeByName(data.functions[0].name);
 
-          if (data.functions.length > 1) {
-            const select = document.getElementById("funcSelect");
-            select.innerHTML = "";
-            data.functions.forEach(f => {
-              const opt = document.createElement("option");
-              opt.value = f.id;
-              opt.innerText = f.name;
-              opt.setAttribute("data-func-name", f.name);
-              select.appendChild(opt);
-            });
-            select.onchange = function() {
-              const selectedOpt = select.options[select.selectedIndex];
-              const fName = selectedOpt ? selectedOpt.getAttribute("data-func-name") || selectedOpt.innerText : "";
-              applyThemeByName(fName);
-            };
-            document.getElementById("funcPickerGroup").style.display = "block";
-          }
+          const select = document.getElementById("funcSelect");
+          select.innerHTML = "";
+          data.functions.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.id;
+            opt.innerText = f.name;
+            opt.setAttribute("data-func-name", f.name);
+            select.appendChild(opt);
+          });
+          select.onchange = function() {
+            const selectedOpt = select.options[select.selectedIndex];
+            const fName = selectedOpt ? selectedOpt.getAttribute("data-func-name") || selectedOpt.innerText : "";
+            applyThemeByName(fName);
+          };
+          // Clearly present the function choice on the page
+          document.getElementById("funcPickerGroup").style.display = "block";
         } else {
           applyThemeByName(data.title || "baraat");
+          document.getElementById("funcPickerGroup").style.display = "none";
         }
 
         document.getElementById("mainView").style.display = "block";
@@ -942,7 +944,8 @@
 
       const guestName = document.getElementById("guestNameInput").value;
       const funcSelect = document.getElementById("funcSelect");
-      const functionId = funcSelect && funcSelect.value ? funcSelect.value : null;
+      let rawFuncId = funcSelect && funcSelect.value ? funcSelect.value : null;
+      const functionId = (rawFuncId && validFunctionIds.has(rawFuncId)) ? rawFuncId : null;
 
       try {
         // Step 1: Sign
