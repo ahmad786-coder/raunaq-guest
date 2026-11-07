@@ -519,6 +519,7 @@
         statusConfirming: "Confirming...",
         statusRetrying: "Retrying…",
         statusDone: "✓ Uploaded",
+        statusDonePending: "Uploaded ✓ — the host will add it to the gallery shortly.",
         statusFailed: "Failed",
         statusPaused: "Uploads are paused for this event right now. Your photo is safe in the queue — please try again later.",
         retryBtn: "Retry",
@@ -555,6 +556,7 @@
         statusConfirming: "تصدیق ہو رہی ہے...",
         statusRetrying: "دوبارہ کوشش جاری ہے…",
         statusDone: "✓ محفوظ ہو گئی",
+        statusDonePending: "اپلوڈ مکمل ✓ — میزبان جلد ہی اسے گیلری میں شامل کر دیں گے۔",
         statusFailed: "ناکامی",
         statusPaused: "اس وقت اس تقریب کے لیے اپلوڈز معطل ہیں۔ آپ کی تصویر قطار میں محفوظ ہے — براہ کرم بعد میں دوبارہ کوشش کریں۔",
         retryBtn: "دوبارہ کوشش کریں",
@@ -873,7 +875,7 @@
           statusText = s.statusRetrying;
           statusClass = "status-confirming";
         } else if (item.state === "done") {
-          statusText = s.statusDone;
+          statusText = (eventData && eventData.approvalRequired) ? s.statusDonePending : s.statusDone;
           statusClass = "status-done";
         } else if (item.state === "failed") {
           statusText = item.errorMessage || s.statusFailed;
