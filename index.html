@@ -497,7 +497,7 @@
         <input type="text" id="guestNameInput" placeholder="e.g. Uncle Rashid">
       </div>
 
-      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+      <input type="file" id="fileInput" accept="image/*,video/*,.heic,.heif" multiple style="display:none;" onchange="handleFileSelect(event)">
       <button class="btn-upload" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
         📸 Add Photos & Videos
       </button>
@@ -576,6 +576,14 @@
         eventFull: "Event storage cap reached. Upload rejected.",
         eventNotFound: "Event not found. Please check or re-scan your table QR code.",
         connError: "Failed to connect to server. Please try again.",
+        errPhotoTooLarge: "Photos must be 25 MB or less.",
+        errVideoTooLarge: "Videos must be 200 MB or less.",
+        errAudioTooLarge: "Audio must be 10 MB or less.",
+        errRateLimit: "Too many uploads. Please wait a minute before retrying.",
+        errNetworkDrop: "Connection lost. Tap retry to continue.",
+        errStoragePut: "Storage upload failed. Tap retry to continue.",
+        errInvalidFormat: "Unsupported file format. Please choose a standard photo or video.",
+        errUploadClosed: "The upload window for this event is closed.",
         voiceTitle: "🎤 Leave a Voice Message",
         btnRecordText: "🔴 Start Recording",
         btnStopRecordText: "⏹ Stop Recording",
@@ -613,6 +621,14 @@
         eventFull: "اس تقریب کی اسٹوریج گنجائش مکمل ہو چکی ہے۔",
         eventNotFound: "تقریب نہیں ملی۔ براہ کرم اپنا ٹیبل QR کوڈ دوبارہ اسکین کریں۔",
         connError: "سرور سے رابطہ نہ ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
+        errPhotoTooLarge: "تصویر کا سائز 25 ایم بی یا اس سے کم ہونا چاہیے۔",
+        errVideoTooLarge: "ویڈیو کا سائز 200 ایم بی یا اس سے کم ہونا چاہیے۔",
+        errAudioTooLarge: "آڈیو کا سائز 10 ایم بی یا اس سے کم ہونا چاہیے۔",
+        errRateLimit: "بہت زیادہ اپلوڈز کی کوشش۔ براہ کرم ایک منٹ بعد دوبارہ کوشش کریں۔",
+        errNetworkDrop: "انٹرنیٹ رابطہ منقطع ہو گیا۔ دوبارہ کوشش پر ٹیپ کریں۔",
+        errStoragePut: "اسٹوریج اپلوڈ ناکام ہو گیا۔ دوبارہ کوشش پر ٹیپ کریں۔",
+        errInvalidFormat: "فائل فارمیٹ درست نہیں ہے۔ براہ کرم معیاری تصویر یا ویڈیو منتخب کریں۔",
+        errUploadClosed: "اس تقریب کے لیے اپلوڈ کا وقت ختم ہو چکا ہے۔",
         voiceTitle: "🎤 وائس میسج ریکارڈ کریں",
         btnRecordText: "🔴 ریکارڈنگ شروع کریں",
         btnStopRecordText: "⏹ ریکارڈنگ مکمل کریں",
@@ -844,13 +860,23 @@
           existing.size = file.size;
           existing.mime = file.type || "application/octet-stream";
         } else {
-          const kind = file.type.startsWith("video") ? "video" : "photo";
+          const isVid = (file.type && file.type.startsWith("video")) || /\.(mp4|mov|webm|m4v)$/i.test(file.name);
+          const kind = isVid ? "video" : "photo";
+          let mime = file.type || "application/octet-stream";
+          if (!file.type || file.type === "application/octet-stream") {
+            if (/\.(heic|heif)$/i.test(file.name)) mime = "image/heic";
+            else if (/\.(jpg|jpeg)$/i.test(file.name)) mime = "image/jpeg";
+            else if (/\.png$/i.test(file.name)) mime = "image/png";
+            else if (/\.webp$/i.test(file.name)) mime = "image/webp";
+            else if (/\.mp4$/i.test(file.name)) mime = "video/mp4";
+            else if (/\.mov$/i.test(file.name)) mime = "video/quicktime";
+          }
           fileQueue.push({
             id: "f_" + Math.random().toString(36).substring(2, 9),
             file: file,
             name: file.name,
             size: file.size,
-            mime: file.type || "application/octet-stream",
+            mime: mime,
             kind: kind,
             state: "queued",
             progress: 0,
@@ -1061,14 +1087,36 @@
       } catch (err) {
         console.error("Upload error for", item.name, err);
         item.state = "failed";
-        if (err && (err.code === "EVENT_EXPIRED" || (err.message && err.message.includes("EVENT_EXPIRED")))) {
-          item.errorMessage = STRINGS[currentLang].galleryClosed || "This event's gallery has closed.";
-        } else if (err && (err.code === "EVENT_NOT_ACTIVE" || (err.message && err.message.includes("EVENT_NOT_ACTIVE")))) {
-          item.errorMessage = STRINGS[currentLang].galleryNotAccepting || "This gallery isn't accepting uploads yet — please check back soon.";
-        } else if (err && (err.code === "GLOBAL_STORAGE_FULL" || (err.message && err.message.includes("GLOBAL_STORAGE_FULL")))) {
-          item.errorMessage = STRINGS[currentLang].statusPaused;
-        } else if (err && (err.code === "EVENT_STORAGE_FULL" || (err.message && err.message.includes("EVENT_STORAGE_FULL")))) {
-          item.errorMessage = STRINGS[currentLang].eventFull || "Event storage cap reached. Upload rejected.";
+        const s = STRINGS[currentLang];
+        const code = err ? (err.code || "") : "";
+        const msg = err ? (err.message || "") : "";
+
+        if (code === "EVENT_EXPIRED" || msg.includes("EVENT_EXPIRED")) {
+          item.errorMessage = s.galleryClosed;
+        } else if (code === "EVENT_NOT_ACTIVE" || msg.includes("EVENT_NOT_ACTIVE")) {
+          item.errorMessage = s.galleryNotAccepting;
+        } else if (code === "GLOBAL_STORAGE_FULL" || msg.includes("GLOBAL_STORAGE_FULL")) {
+          item.errorMessage = s.statusPaused;
+        } else if (code === "EVENT_STORAGE_FULL" || msg.includes("EVENT_STORAGE_FULL")) {
+          item.errorMessage = s.eventFull;
+        } else if (code === "PHOTO_TOO_LARGE" || msg.includes("PHOTO_TOO_LARGE")) {
+          item.errorMessage = s.errPhotoTooLarge;
+        } else if (code === "VIDEO_TOO_LARGE" || msg.includes("VIDEO_TOO_LARGE")) {
+          item.errorMessage = s.errVideoTooLarge;
+        } else if (code === "AUDIO_TOO_LARGE" || msg.includes("AUDIO_TOO_LARGE")) {
+          item.errorMessage = s.errAudioTooLarge;
+        } else if (code === "RATE_LIMITED" || msg.includes("RATE_LIMITED")) {
+          item.errorMessage = s.errRateLimit;
+        } else if (code === "UPLOAD_WINDOW_CLOSED" || msg.includes("UPLOAD_WINDOW_CLOSED")) {
+          item.errorMessage = s.errUploadClosed;
+        } else if (code === "DISALLOWED_MIME" || code === "INVALID_KIND" || msg.includes("DISALLOWED_MIME")) {
+          item.errorMessage = s.errInvalidFormat;
+        } else if (code === "NETWORK_ERROR" || msg.includes("Network error") || msg.includes("Failed to fetch")) {
+          item.errorMessage = s.errNetworkDrop;
+        } else if (code === "STORAGE_PUT_FAILED" || msg.includes("Storage PUT rejected") || msg.includes("Part PUT rejected")) {
+          item.errorMessage = s.errStoragePut;
+        } else {
+          item.errorMessage = s.connError;
         }
         persistQueueMetadata();
         renderQueue();
@@ -1087,9 +1135,9 @@
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error("Storage PUT rejected with status: " + xhr.status));
+          else { const e = new Error("Storage PUT rejected with status: " + xhr.status); e.code = "STORAGE_PUT_FAILED"; reject(e); }
         };
-        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onerror = () => { const e = new Error("Network error during upload"); e.code = "NETWORK_ERROR"; reject(e); };
         xhr.send(item.file);
       });
     }
@@ -1131,10 +1179,12 @@
             const etag = xhr.getResponseHeader("ETag") || "";
             resolve(etag.replace(/^"|"$/g, ''));
           } else {
-            reject(new Error("Part PUT rejected: " + xhr.status));
+            const e = new Error("Part PUT rejected: " + xhr.status);
+            e.code = "STORAGE_PUT_FAILED";
+            reject(e);
           }
         };
-        xhr.onerror = () => reject(new Error("Network error on part upload"));
+        xhr.onerror = () => { const e = new Error("Network error on part upload"); e.code = "NETWORK_ERROR"; reject(e); };
         xhr.send(blob);
       });
     }
