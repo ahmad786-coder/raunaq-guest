@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FFFBF3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#140E11" media="(prefers-color-scheme: dark)">
   <title>Raunaq (رونق) — Wedding Moments</title>
   <style>
     :root,
@@ -50,6 +52,48 @@
       --success: #15803d;
       --error: #b91c1c;
       --radius: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root,
+      [data-theme="baraat"] {
+        --primary: #9F1239;
+        --primary-hover: #BE123C;
+        --accent: #C6A15B;
+        --bg: #140E11;
+        --card-bg: #261B21;
+        --text: #FFFBF3;
+        --text-muted: #A8979D;
+        --border: #3D2A33;
+        --hairline: #C6A15B;
+        --arch-bg: #3B1822;
+        --success: #22C55E;
+        --error: #EF4444;
+      }
+      [data-theme="mehndi"] {
+        --primary: #D97706;
+        --primary-hover: #F59E0B;
+        --accent: #34D399;
+        --bg: #12100A;
+        --card-bg: #221D15;
+        --text: #FFFBF3;
+        --text-muted: #A39E8F;
+        --border: #3D3524;
+        --hairline: #C6A15B;
+        --arch-bg: #2D2413;
+      }
+      [data-theme="walima"] {
+        --primary: #4A6B82;
+        --primary-hover: #60829B;
+        --accent: #C6A15B;
+        --bg: #0E1317;
+        --card-bg: #1B232A;
+        --text: #FFFBF3;
+        --text-muted: #94A3B8;
+        --border: #2B3742;
+        --hairline: #C6A15B;
+        --arch-bg: #232E38;
+      }
     }
 
     /* Micro-animations */
