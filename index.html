@@ -35,6 +35,7 @@
       --success: #4D7C58;
       --error: #B33A3A;
       --warning: #C68A2E;
+      --warning-text: #92400E;
       --radius: 16px;
     }
     [data-theme="mehndi"] {
@@ -51,6 +52,7 @@
       --success: #4D7C58;
       --error: #B33A3A;
       --warning: #C68A2E;
+      --warning-text: #92400E;
       --radius: 16px;
     }
     [data-theme="walima"] {
@@ -67,6 +69,7 @@
       --success: #4D7C58;
       --error: #B33A3A;
       --warning: #C68A2E;
+      --warning-text: #92400E;
       --radius: 16px;
     }
 
@@ -87,6 +90,7 @@
         --success: #6FA87D;
         --error: #E06767;
         --warning: #E0B35C;
+        --warning-text: #E0B35C;
       }
       [data-theme="mehndi"] {
         --primary: #D97706;
@@ -99,6 +103,7 @@
         --border: #3D3524;
         --hairline: #D4AF6A;
         --arch-bg: #2D2413;
+        --warning-text: #E0B35C;
       }
       [data-theme="walima"] {
         --primary: #4A6B82;
@@ -111,6 +116,7 @@
         --border: #2B3742;
         --hairline: #D4AF6A;
         --arch-bg: #232E38;
+        --warning-text: #E0B35C;
       }
     }
 
@@ -327,7 +333,7 @@
     }
     .status-queued { color: var(--text-muted); }
     .status-uploading { color: var(--primary); }
-    .status-confirming { color: var(--warning); }
+    .status-confirming { color: var(--warning-text); }
     .status-done { color: var(--success); }
     .status-failed { color: var(--error); }
     .progress-bar-bg {
