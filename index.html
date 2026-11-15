@@ -1035,6 +1035,123 @@
       }
     }
 
+    // --- Client-side EXIF Stripping for JPEG & PNG (Security Part 2j) ---
+    function stripJpegExif(uint8) {
+      if (!uint8 || uint8.length < 4 || uint8[0] !== 0xFF || uint8[1] !== 0xD8) return uint8;
+      const chunks = [new Uint8Array([0xFF, 0xD8])];
+      let pos = 2;
+      const len = uint8.length;
+      while (pos < len) {
+        if (uint8[pos] !== 0xFF) {
+          chunks.push(uint8.subarray(pos));
+          break;
+        }
+        while (pos < len && uint8[pos] === 0xFF) pos++;
+        if (pos >= len) break;
+        const marker = uint8[pos++];
+        if ((marker >= 0xD0 && marker <= 0xD7) || marker === 0xD8 || marker === 0xD9 || marker === 0x01) {
+          chunks.push(new Uint8Array([0xFF, marker]));
+          if (marker === 0xD9) break;
+          continue;
+        }
+        if (pos + 2 > len) {
+          chunks.push(new Uint8Array([0xFF, marker]), uint8.subarray(pos));
+          break;
+        }
+        const segLen = (uint8[pos] << 8) | uint8[pos + 1];
+        if (pos + segLen > len || segLen < 2) {
+          chunks.push(new Uint8Array([0xFF, marker]), uint8.subarray(pos));
+          break;
+        }
+        let isExif = false;
+        if (marker === 0xE1 && segLen >= 8) {
+          if (uint8[pos + 2] === 0x45 && uint8[pos + 3] === 0x78 && uint8[pos + 4] === 0x69 &&
+              uint8[pos + 5] === 0x66 && uint8[pos + 6] === 0x00 && uint8[pos + 7] === 0x00) {
+            isExif = true;
+          }
+        }
+        if (!isExif) {
+          chunks.push(new Uint8Array([0xFF, marker]), uint8.subarray(pos, pos + segLen));
+        }
+        pos += segLen;
+        if (marker === 0xDA) {
+          chunks.push(uint8.subarray(pos));
+          break;
+        }
+      }
+      let totalLen = 0;
+      for (const c of chunks) totalLen += c.length;
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const c of chunks) {
+        result.set(c, offset);
+        offset += c.length;
+      }
+      return result;
+    }
+
+    function stripPngExif(uint8) {
+      if (!uint8 || uint8.length < 8) return uint8;
+      const sig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+      for (let i = 0; i < 8; i++) {
+        if (uint8[i] !== sig[i]) return uint8;
+      }
+      const chunks = [uint8.subarray(0, 8)];
+      let pos = 8;
+      const len = uint8.length;
+      while (pos + 8 <= len) {
+        const chunkLen = (uint8[pos] << 24) | (uint8[pos + 1] << 16) | (uint8[pos + 2] << 8) | uint8[pos + 3];
+        const totalChunkLen = 12 + chunkLen;
+        if (pos + totalChunkLen > len || totalChunkLen < 12) {
+          chunks.push(uint8.subarray(pos));
+          break;
+        }
+        const isExif = uint8[pos + 4] === 0x65 && uint8[pos + 5] === 0x58 &&
+                       uint8[pos + 6] === 0x49 && uint8[pos + 7] === 0x66;
+        if (!isExif) {
+          chunks.push(uint8.subarray(pos, pos + totalChunkLen));
+        }
+        pos += totalChunkLen;
+      }
+      let totalLen = 0;
+      for (const c of chunks) totalLen += c.length;
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const c of chunks) {
+        result.set(c, offset);
+        offset += c.length;
+      }
+      return result;
+    }
+
+    async function stripExifIfSupported(file, mime, name) {
+      if (!file) return file;
+      const lowerMime = (mime || "").toLowerCase();
+      const lowerName = (name || "").toLowerCase();
+      const isJpeg = lowerMime === "image/jpeg" || lowerMime === "image/jpg" ||
+                     lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg");
+      const isPng = lowerMime === "image/png" || lowerName.endsWith(".png");
+
+      if (!isJpeg && !isPng) return file;
+
+      try {
+        const arrayBuf = await file.arrayBuffer();
+        const uint8 = new Uint8Array(arrayBuf);
+        let stripped;
+        if (isJpeg) {
+          stripped = stripJpegExif(uint8);
+        } else if (isPng) {
+          stripped = stripPngExif(uint8);
+        }
+        if (stripped && stripped.length !== uint8.length) {
+          return new File([stripped], file.name, { type: file.type || mime });
+        }
+      } catch (e) {
+        console.warn("EXIF strip failed, falling back to original:", e);
+      }
+      return file;
+    }
+
     async function uploadItem(item) {
       item.state = "uploading";
       item.progress = 0;
@@ -1046,6 +1163,14 @@
       const functionId = (rawFuncId && validFunctionIds.has(rawFuncId)) ? rawFuncId : null;
 
       try {
+        // Strip EXIF client-side for direct JPEG/PNG uploads before signing & PUT
+        if (item.file && item.kind === "photo") {
+          const strippedFile = await stripExifIfSupported(item.file, item.mime, item.name);
+          if (strippedFile && strippedFile.size !== item.size) {
+            item.file = strippedFile;
+            item.size = strippedFile.size;
+          }
+        }
         // Step 1: Sign
         const signRes = await fetch(`${API_BASE}/sign-upload`, {
           method: "POST",
