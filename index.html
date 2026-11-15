@@ -252,8 +252,8 @@
       color: var(--hairline);
     }
     .window-notice {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       color: var(--error);
       padding: 14px;
       border-radius: 8px;
@@ -327,12 +327,12 @@
     }
     .status-queued { color: var(--text-muted); }
     .status-uploading { color: var(--primary); }
-    .status-confirming { color: #d97706; }
+    .status-confirming { color: var(--warning); }
     .status-done { color: var(--success); }
     .status-failed { color: var(--error); }
     .progress-bar-bg {
       height: 6px;
-      background: #e5e7eb;
+      background: var(--border);
       border-radius: 3px;
       overflow: hidden;
       margin-top: 4px;
@@ -346,8 +346,8 @@
     .btn-retry {
       align-self: flex-end;
       margin-top: 6px;
-      background: #fee2e2;
-      border: 1px solid #fecaca;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       color: var(--error);
       padding: 4px 10px;
       border-radius: 6px;
@@ -357,8 +357,8 @@
     .thank-you-box {
       text-align: center;
       padding: 24px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       margin-top: 20px;
     }
@@ -366,9 +366,9 @@
     .voice-section {
       margin-top: 24px;
       padding: 18px 16px;
-      border: 1px dashed #d1d5db;
+      border: 1px dashed var(--border);
       border-radius: var(--radius);
-      background: #fafaf9;
+      background: var(--card-bg);
       text-align: center;
     }
     .voice-title {
@@ -380,7 +380,7 @@
     .voice-timer {
       font-size: 26px;
       font-weight: 800;
-      color: var(--primary);
+      color: var(--text);
       margin-bottom: 12px;
       font-variant-numeric: tabular-nums;
       display: flex;
@@ -402,9 +402,9 @@
     }
     .btn-record {
       width: 100%;
-      background: #ffffff;
+      background: var(--bg);
       border: 2px solid var(--primary);
-      color: var(--primary);
+      color: var(--text);
       padding: 12px;
       border-radius: var(--radius);
       font-size: 15px;
@@ -417,7 +417,7 @@
       transition: all 0.2s;
     }
     .btn-record:active {
-      background: #fdf2f4;
+      background: var(--border);
     }
     .btn-stop-record {
       background: #dc2626;
@@ -440,7 +440,8 @@
       border-radius: 8px;
       cursor: pointer;
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--bg);
+      color: var(--text);
     }
     .voice-actions .btn-send-audio {
       background: var(--primary);
@@ -453,7 +454,8 @@
       font-size: 13px;
       margin-top: 8px;
       padding: 6px;
-      background: #fee2e2;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 6px;
     }
     audio {
