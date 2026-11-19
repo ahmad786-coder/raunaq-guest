@@ -1132,6 +1132,195 @@
       return result;
     }
 
+    function stripHeicExif(uint8) {
+      if (!uint8 || uint8.length < 16) return uint8;
+      // Check for ftyp at offset 4
+      if (uint8[4] !== 0x66 || uint8[5] !== 0x74 || uint8[6] !== 0x79 || uint8[7] !== 0x70) {
+        return uint8;
+      }
+      const len = uint8.length;
+      const view = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+
+      // 1. Locate top-level 'meta' box
+      let pos = 0;
+      let metaPos = -1;
+      let metaSize = -1;
+      let metaHeaderLen = 8;
+
+      while (pos + 8 <= len) {
+        let size = view.getUint32(pos, false);
+        let headerLen = 8;
+        if (size === 1) {
+          if (pos + 16 > len) break;
+          // In JS, read 64-bit size
+          const high = view.getUint32(pos + 8, false);
+          const low = view.getUint32(pos + 12, false);
+          size = high * 4294967296 + low;
+          headerLen = 16;
+        } else if (size === 0) {
+          size = len - pos;
+        }
+
+        // 'meta' = 0x6D, 0x65, 0x74, 0x61
+        if (uint8[pos + 4] === 0x6D && uint8[pos + 5] === 0x65 &&
+            uint8[pos + 6] === 0x74 && uint8[pos + 7] === 0x61) {
+          metaPos = pos;
+          metaSize = size;
+          metaHeaderLen = headerLen;
+          break;
+        }
+        pos += size;
+      }
+
+      if (metaPos === -1 || metaPos + metaSize > len) return uint8;
+
+      // meta is a FullBox: 4 bytes version (1) + flags (3)
+      const metaContentPos = metaPos + metaHeaderLen + 4;
+      const metaEnd = metaPos + metaSize;
+
+      // 2. Locate 'iinf' and 'iloc' sub-boxes inside meta
+      let iinfPos = -1, iinfSize = -1;
+      let ilocPos = -1, ilocSize = -1;
+
+      let subPos = metaContentPos;
+      while (subPos + 8 <= metaEnd) {
+        const subSize = view.getUint32(subPos, false);
+        if (subSize < 8 || subPos + subSize > metaEnd) break;
+        const b0 = uint8[subPos + 4], b1 = uint8[subPos + 5], b2 = uint8[subPos + 6], b3 = uint8[subPos + 7];
+
+        // 'iinf' = 0x69, 0x69, 0x6E, 0x66
+        if (b0 === 0x69 && b1 === 0x69 && b2 === 0x6E && b3 === 0x66) {
+          iinfPos = subPos;
+          iinfSize = subSize;
+        }
+        // 'iloc' = 0x69, 0x6C, 0x6F, 0x63
+        else if (b0 === 0x69 && b1 === 0x6C && b2 === 0x6F && b3 === 0x63) {
+          ilocPos = subPos;
+          ilocSize = subSize;
+        }
+        subPos += subSize;
+      }
+
+      if (iinfPos === -1 || ilocPos === -1) return uint8;
+
+      // 3. Parse iinf to discover item IDs corresponding to 'Exif'
+      const iinfVer = uint8[iinfPos + 8];
+      let entryCount, infeCursor;
+      if (iinfVer === 0) {
+        entryCount = view.getUint16(iinfPos + 12, false);
+        infeCursor = iinfPos + 14;
+      } else {
+        entryCount = view.getUint32(iinfPos + 12, false);
+        infeCursor = iinfPos + 16;
+      }
+
+      const exifItemIds = new Set();
+      for (let i = 0; i < entryCount; i++) {
+        if (infeCursor + 8 > iinfPos + iinfSize) break;
+        const infeSize = view.getUint32(infeCursor, false);
+        if (infeSize < 8 || infeCursor + infeSize > iinfPos + iinfSize) break;
+
+        // 'infe' = 0x69, 0x6E, 0x66, 0x65
+        if (uint8[infeCursor + 4] === 0x69 && uint8[infeCursor + 5] === 0x6E &&
+            uint8[infeCursor + 6] === 0x66 && uint8[infeCursor + 7] === 0x65) {
+          const infeVer = uint8[infeCursor + 8];
+          if (infeVer === 2 || infeVer === 3) {
+            let itemId, itemTypeOffset;
+            if (infeVer === 2) {
+              itemId = view.getUint16(infeCursor + 12, false);
+              itemTypeOffset = infeCursor + 16;
+            } else {
+              itemId = view.getUint32(infeCursor + 12, false);
+              itemTypeOffset = infeCursor + 18;
+            }
+            // 'Exif' = 0x45, 0x78, 0x69, 0x66
+            if (uint8[itemTypeOffset] === 0x45 && uint8[itemTypeOffset + 1] === 0x78 &&
+                uint8[itemTypeOffset + 2] === 0x69 && uint8[itemTypeOffset + 3] === 0x66) {
+              exifItemIds.add(itemId);
+            }
+          }
+        }
+        infeCursor += infeSize;
+      }
+
+      if (exifItemIds.size === 0) return uint8;
+
+      // 4. Parse iloc and zero-out the extents for exifItemIds
+      const copy = new Uint8Array(uint8);
+      const copyView = new DataView(copy.buffer, copy.byteOffset, copy.byteLength);
+
+      const ilocVer = copy[ilocPos + 8];
+      const offsetSize = (copy[ilocPos + 12] >> 4) & 0x0F;
+      const lengthSize = copy[ilocPos + 12] & 0x0F;
+      const baseOffsetSize = (copy[ilocPos + 13] >> 4) & 0x0F;
+      const indexSize = (ilocVer === 1 || ilocVer === 2) ? (copy[ilocPos + 13] & 0x0F) : 0;
+
+      function readUint(bytes, off, sz) {
+        let val = 0;
+        for (let k = 0; k < sz; k++) val = (val * 256) + bytes[off + k];
+        return val;
+      }
+
+      let p = ilocPos + 14;
+      let itemCount;
+      if (ilocVer < 2) {
+        itemCount = copyView.getUint16(p, false);
+        p += 2;
+      } else {
+        itemCount = copyView.getUint32(p, false);
+        p += 4;
+      }
+
+      for (let i = 0; i < itemCount; i++) {
+        let itemId;
+        if (ilocVer < 2) {
+          itemId = copyView.getUint16(p, false);
+          p += 2;
+        } else {
+          itemId = copyView.getUint32(p, false);
+          p += 4;
+        }
+
+        if (ilocVer === 1 || ilocVer === 2) p += 2;
+        p += 2; // data_reference_index
+
+        let baseOffset = 0;
+        if (baseOffsetSize > 0) {
+          baseOffset = readUint(copy, p, baseOffsetSize);
+          p += baseOffsetSize;
+        }
+
+        const extentCount = copyView.getUint16(p, false);
+        p += 2;
+
+        const isExif = exifItemIds.has(itemId);
+
+        for (let j = 0; j < extentCount; j++) {
+          if ((ilocVer === 1 || ilocVer === 2) && indexSize > 0) p += indexSize;
+          const extentOffset = readUint(copy, p, offsetSize);
+          p += offsetSize;
+
+          const extentLenOffsetInIloc = p;
+          const extentLength = readUint(copy, p, lengthSize);
+          p += lengthSize;
+
+          if (isExif && extentLength > 0) {
+            const absOffset = baseOffset + extentOffset;
+            if (absOffset + extentLength <= len) {
+              for (let k = 0; k < extentLength; k++) {
+                copy[absOffset + k] = 0;
+              }
+            }
+            for (let k = 0; k < lengthSize; k++) {
+              copy[extentLenOffsetInIloc + k] = 0;
+            }
+          }
+        }
+      }
+
+      return copy;
+    }
+
     async function stripExifIfSupported(file, mime, name) {
       if (!file) return file;
       const lowerMime = (mime || "").toLowerCase();
@@ -1139,8 +1328,10 @@
       const isJpeg = lowerMime === "image/jpeg" || lowerMime === "image/jpg" ||
                      lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg");
       const isPng = lowerMime === "image/png" || lowerName.endsWith(".png");
+      const isHeic = lowerMime === "image/heic" || lowerMime === "image/heif" ||
+                     lowerName.endsWith(".heic") || lowerName.endsWith(".heif");
 
-      if (!isJpeg && !isPng) return file;
+      if (!isJpeg && !isPng && !isHeic) return file;
 
       try {
         const arrayBuf = await file.arrayBuffer();
@@ -1150,8 +1341,11 @@
           stripped = stripJpegExif(uint8);
         } else if (isPng) {
           stripped = stripPngExif(uint8);
+        } else if (isHeic) {
+          stripped = stripHeicExif(uint8);
         }
-        if (stripped && stripped.length !== uint8.length) {
+        if (stripped) {
+          // If length changed or content modified, return stripped File
           return new File([stripped], file.name, { type: file.type || mime });
         }
       } catch (e) {
